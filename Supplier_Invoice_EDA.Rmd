@@ -1,0 +1,267 @@
+---
+title: "Supplier_Invoice_EDA"
+author: "Pieter Vreeken"
+date: "`r Sys.Date()`"    
+output:
+html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Preparing Environment
+
+In this section, the environment is prepared by installing and loading the required R packages. Once the packages are ready, the dataset is loaded containing (sample) supplier invoice information.
+
+##### Packages loaded:
+* dplyr : Data Manipulation 
+* tidyr : Data Cleaning
+* ggplot2 : visualization
+* lubridate : Date Manipulation
+
+```{r} 
+# Install packages, only if they aren't installed
+# install.packages(c("dplyr", "tidyr", "ggplot2", "lubridate"))
+```
+
+```{r}
+# load packages
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+# read the 'supplier_data' csv file and inspect the first 10 rows
+supplier_data <- read.csv("C:/GitHub/Supplier-Invoice-EDA/supplier_data.csv")
+head(supplier_data, nrow = 10)
+```
+
+### Data Cleaning
+
+In this section, the dataset is examined to understand it's structure and checked for missing values or duplicate invoices. 
+
+```{r}
+# inspection of structure with variables and data types
+glimpse(supplier_data)
+
+# count the missing values per variable
+missing_count <- colSums(is.na(supplier_data))
+missing_count 
+
+# check for duplicate invoices
+sum(duplicated(supplier_data$Invoice_ID))
+```
+
+
+### Data Transformation
+
+In this section, variables are transformed into more efficient data types. After the transformation, a subset of the data is created with a summary per supplier, containing new variables: 1. total invoice amount, 2. total number of invoices received and 3. average invoice amount.  
+
+```{r}
+# Variable transformation
+supplier_data <- supplier_data %>%
+  mutate(
+    Category = as.factor(Category),
+    Contracted_YN = as.factor(Contracted_YN),
+    Status = as.factor(Status),
+    Payment_Term = as.factor(Payment_Term),
+    Sub_Category = as.factor(Sub_Category),
+    Invoice_Date = ymd(Invoice_Date)
+  )
+glimpse(supplier_data)
+```
+
+```{r}
+# feature engineering: creating a subset with totals per supplier and new variables
+supplier_summary <- supplier_data %>%
+  group_by(Vendor_ID) %>%
+  summarize(
+    Total_Invoice_Amount = sum(Invoice_Amount),
+    Total_Invoices = n_distinct(Invoice_ID),
+    Avg_Invoice_Amount = Total_Invoice_Amount / Total_Invoices
+  ) %>%
+  arrange(desc(Total_Invoice_Amount)) %>%
+  ungroup()
+
+# inspect the first 10 rows of the new dataset
+head(supplier_summary, nrow = 10)
+```
+
+### Descriptive Analysis
+
+In this section, basic statistical analyses are performed and visualizations are created to explore key characteristics of the data. 
+
+* Summary Statistics
+* Outlier Detection
+* Data Distribution
+* Correlation Analysis
+* Trend Analysis
+* Categorical Analysis
+
+#### Summary Statistics
+
+```{r}
+sum(supplier_data$Invoice_Amount) # total invoice amount       
+length(unique(supplier_data$Invoice_ID)) # total number of invoices
+length(unique(supplier_data$Vendor_ID)) # total number of suppliers
+
+# Summary statistics for 'Total_Invoice_Amount' and 'Total_Invoices' 
+summary(supplier_data$Invoice_Amount)         
+```
+
+#### Outlier Detection
+
+```{r}
+# Boxplot for outlier detection based on individual invoices
+ggplot(supplier_data, aes(y = Invoice_Amount)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(
+    title = "Distribution of Invoice Amount",
+    ylab = "Invoice Amount")
+
+# Boxplot for outlier detection by category and sub-category
+ggplot(supplier_data, aes(x = Category, y = Invoice_Amount)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(
+    title = "Distribution of Invoice Amount by Category",
+    xlab = "Category",
+    ylab = "Invoice Amount")
+
+# --------------
+
+# Boxplot for detection of outlier suppliers based on total invoice amount
+ggplot(supplier_summary, aes(y = Total_Invoice_Amount)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  labs(
+    title = "Distribution of total Invoice Amount per Supplier",
+    ylab = "Invoice Amount per Supplier")
+
+# --------------
+
+# IQR-threshold invoices
+Q1_inv <- quantile(supplier_data$Invoice_Amount, 0.25)
+Q3_inv <- quantile(supplier_data$Invoice_Amount, 0.75)
+IQR_inv <- Q3_inv - Q1_inv
+
+# outliers boundaries invoices
+lower_bound_inv <- Q1_inv - 1.5 * IQR_inv
+upper_bound_inv <- Q3_inv + 1.5 * IQR_inv
+
+# filter invoices
+outlier_invoices <- supplier_data %>%
+  filter(Invoice_Amount < lower_bound_inv | Invoice_Amount > upper_bound_inv) %>%
+  select(Invoice_ID, Vendor_ID, Invoice_Amount, Category, Sub_Category)
+
+outlier_invoices # View invoices
+
+# --------------
+
+# IQR-threshold suppliers
+Q1_sup <- quantile(supplier_summary$Total_Invoice_Amount, 0.25)
+Q3_sup <- quantile(supplier_summary$Total_Invoice_Amount, 0.75)
+IQR_sup <- Q3_sup - Q1_sup
+
+# outliers boundaries invoices
+lower_bound_sup <- Q1_sup - 1.5 * IQR_sup
+upper_bound_sup <- Q3_sup + 1.5 * IQR_sup
+
+# filter suppliers
+outlier_suppliers <- supplier_summary %>%
+  filter(Total_Invoice_Amount < lower_bound_sup | Total_Invoice_Amount > upper_bound_sup) 
+
+outlier_suppliers # View suppliers
+```
+
+
+#### Data Distribution
+
+```{r}
+# plot distribution of invoice amount
+ggplot(supplier_data, aes(x = Invoice_Amount)) + 
+  geom_histogram(bins = 30) + 
+  theme_minimal() +
+  labs(
+    title = "Distribution",
+    xlab = "Invoice Amount",
+    ylab = "Invoices(#)")
+
+# density plot for invoice amount
+ggplot(supplier_data, aes(x = Invoice_Amount)) + 
+  geom_density(fill = "blue", alpha = 0.1) + 
+  theme_minimal() +
+  labs(
+    title = "Density Distribution", 
+    x = "Invoice Amount", 
+    y = "Density")
+
+```
+
+
+#### Correlation Analysis
+
+```{r}
+# scatter plot with correlation between total invoice amount and total invoices
+ggplot(supplier_summary, aes(x = Total_Invoices, y = Total_Invoice_Amount)) +
+  geom_point(color = "blue") +
+  theme_minimal() +
+  labs(
+    title = "Correlation between total invoice amount and number of invoices per supplier",
+    x = "Total Invoices",
+    y = "Total Invoice Amount"
+  ) +
+  geom_vline(xintercept = median(supplier_summary$Total_Invoices)) +
+  geom_hline(yintercept = median(supplier_summary$Total_Invoice_Amount))
+```
+
+
+#### Categorical Analysis
+
+```{r}
+# create a subset with a summary per category and sub-category
+category_summary <- supplier_data %>%
+  group_by(Category, Sub_Category) %>%
+  summarize(
+    Total_Invoice_Amount = sum(Invoice_Amount),
+    Total_Invoices = n_distinct(Invoice_ID),
+    Avg_Invoice_Amount = Total_Invoice_Amount / Total_Invoices
+  ) %>%
+  arrange(desc(Total_Invoice_Amount)) %>%
+  select(Category, Sub_Category, Total_Invoice_Amount, Total_Invoices, Avg_Invoice_Amount) %>%
+  ungroup()
+
+# view categories
+category_summary
+
+```
+
+#### Trend Analysis
+
+```{r}
+# time series analysis; total invoice amount per month 
+amount_per_month <- supplier_data %>%
+  mutate(
+    Month = floor_date(Invoice_Date, "month")) %>%
+  group_by(Month) %>%
+  summarize(
+    Total_Amount = sum(Invoice_Amount),
+    Total_Invoices = n_distinct(Invoice_ID)
+  ) %>%
+  ungroup()
+
+# plot total invoice amount per month
+ggplot(amount_per_month, aes(x = Month, y = Total_Amount)) + 
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(
+    title = "Total Invoice Amount per Month",
+    x = "Month",
+    y = "Total Invoice Amount"
+  ) + 
+  scale_x_date(date_labels = "%b %Y", date_breaks = "1 month")
+```
