@@ -1,45 +1,33 @@
 # Supplier-Invoice-EDA
 
 ### Overview
-This repository contains an Exploratory Data Analysis (EDA) of supplier invoices, aimed at uncovering insights into supplier relationships, invoice volumes, and spending patterns within a supply chain context. The analysis was conducted in R and presented in an R Markdown file, with HTML output for easy viewing.
+This repository contains an Exploratory Data Analysis (EDA) of supplier invoices, conducted in R and presented in an R Markdown file. The goal is to analyze supplier relationships, invoice volumes, and spending patterns in a supply chain context.
 
 ### Contents
-* Supplier_Invoice_EDA.Rmd: The R Markdown file containing the full EDA, including data cleaning, transformation, and visualization.
-* Supplier_Invoice_EDA.html: The HTML output generated from the R Markdown file, providing a convenient way to view the analysis results.
-* README.md: This document, providing an overview of the project and instructions for using the files.
-
-### Purpose of the Analysis
-The objective of this EDA is to provide insights for procurement management.
+* Supplier_Invoice_EDA.Rmd: R Markdown file with data cleaning, transformation, and analysis.
+* Supplier_Invoice_EDA.html: HTML output for easy viewing of the EDA results.
+* README.md: Project overview and usage instructions.
+upplier_data.csv is loaded, which contains sample data on supplier invoices.
+al invoice amounts per month, visualized with line plots.
 
 ### Analysis Structure
-The analysis consists of the following sections:
+1. Preparing Environment: Installs and loads packages (dplyr, tidyr, ggplot2, lubridate) and loads the supplier_data.csv dataset.
 
-#### Preparing Environment:
+2. Data Cleaning: Checks the dataset structure, identifies missing values, and detects duplicate invoices.
 
-* The required R packages (dplyr, tidyr, ggplot2, lubridate) are installed and loaded.
-* The dataset supplier_data.csv is loaded, which contains sample data on supplier invoices.
+3. Data Transformation: Converts variables to efficient data types and creates a summary dataset per supplier with metrics like total and average invoice amounts.
 
-### Data Cleaning:
+4. Descriptive Analysis:
+* Summary Statistics
+* Outlier Detection (using boxplots and IQR filtering)
+* Data Distribution (histogram and density plots)
+* Correlation Analysis (total invoices vs. total invoice amount per supplier)
+* Categorical Analysis (summary by category and sub-category)
+* Trend Analysis (monthly total invoice amounts)
 
-* The dataset is examined for structure, missing values, and duplicate invoices to ensure data quality.
+### Usage
+1. Install Required R Packages
 
-#### Data Transformation:
+2. Load the Dataset: Place supplier_data.csv in the project directory and update the file path in the R Markdown file if necessary.
 
-* Key variables are transformed into appropriate data types.
-* A summary dataset is created, grouping by supplier and calculating total, average, and count of invoices per supplier.
-
-### Descriptive Analysis:
-
-* Summary Statistics: Provides basic statistics on invoice amounts, total invoices, and suppliers.
-* Outlier Detection: Boxplots and IQR-based filtering are used to identify outliers in invoice amounts and total invoices per supplier.
-* Data Distribution: Histogram and density plots visualize the distribution of invoice amounts.
-* Correlation Analysis: Scatter plots reveal correlations between total invoice amounts and the number of invoices per supplier.
-* Categorical Analysis: Summary statistics are calculated per category and sub-category of suppliers.
-* Trend Analysis: A time series analysis of total invoice amounts per month, visualized with line plots.
-
-### Usage and Reproduction
-To run the analysis and reproduce the results:
-
-* Install Required R Packages: Open the R Markdown file (Supplier_Invoice_EDA.Rmd) in RStudio and make sure the following packages are installed:
-* Load the Dataset: Ensure that the supplier_data.csv dataset is available in the project directory. Update the file path in the R Markdown file if necessary.
-* Render the R Markdown File: Open the .Rmd file in RStudio and click on Knit to generate the analysis output in HTML format.
+3. Render the R Markdown File: Open the .Rmd file in RStudio and click Knit to generate the HTML output.
